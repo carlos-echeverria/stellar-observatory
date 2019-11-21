@@ -27,7 +27,7 @@ def get_normalized_qset_definition(node):
     public_key = node['publicKey']
     return {
         'threshold': 2,
-        'validators': [public_key],
+        'validators': set([public_key]),
         'innerQuorumSets': [remove_from_qset_definition(node['quorumSet'], public_key)]
     }
 
