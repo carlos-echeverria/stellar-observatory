@@ -11,56 +11,25 @@
 
 import quorums
 import quorum
+import quorum_intersection
 import utils
 import time
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-n_orgs = [4, 5, 6, 7, 8, 9, 10]
-timings_n_1 = [38, 135, 625, 3617, 26081, 152506, 782316]
-numb_qs_n_1 = [1280, 6144, 28672, 131072, 589824, 2621440, 11534336]
-
-fig, ax = plt.subplots()
-fig.suptitle('Threshold = n-1')
-
-ax.set_yscale('log')
-ax.plot(n_orgs, numb_qs_n_1, 'r--', lw=2, label='quorums')
-plt.xlabel('Number of Organizations (n)')
-plt.ylabel('Ellapsed time (ms)', color='r')
-plt.legend(loc='best', fontsize='large')
-
-ax2 = ax.twinx()
-ax2.set_yscale('log')
-ax2.plot(n_orgs, timings_n_1, 'b:', lw=2, label='time')
-# ax2.set(ylabel='quorums')
-plt.ylabel('Quorums Found', color='b')
-plt.legend(loc='best', fontsize='large')
-
-
-n_orgs2 = [4, 5, 6, 7, 8, 9]
-timings_n_2 = [48, 155, 894, 10351, 70939, 322751]
-numb_qs_n_2 = [1280, 6144, 28672,475136,2424832, 12058624]
+# def get_root_quorum_slice_definition(n_orgs):
+#     return {
+#         'threshold': n_orgs - 1,
+#         'validators': set(),
+#         'innerQuorumSets': [
+#             {'threshold': 2, 'validators': {org*3, org*3+1, org*3+2}, 'innerQuorumSets': []}
+#             for org in range(n_orgs)
+#         ]
+#     }
 
 
 
-fig, ax = plt.subplots()
-fig.suptitle('Threshold = floor(2/3 * n + 1)')
-
-ax.set_yscale('log')
-ax.plot(n_orgs2, numb_qs_n_2, 'r--', lw=2, label='quorums')
-plt.xlabel('Number of Organizations (n)')
-plt.ylabel('Ellapsed time (ms)', color='r')
-plt.legend(loc='best', fontsize='large')
-
-ax2 = ax.twinx()
-ax2.set_yscale('log')
-ax2.plot(n_orgs2, timings_n_2, 'b:', lw=2, label='time')
-# ax2.set(ylabel='quorums')
-plt.ylabel('Quorums Found', color='b')
-plt.legend(loc='best', fontsize='large')
-
-#
 # base_quorum_slice_definition = {
 #     'threshold': 3,
 #     'validators': set(),
@@ -73,28 +42,15 @@ plt.legend(loc='best', fontsize='large')
 #         {'threshold': 2, 'validators': {'keybase0', 'keybase1', 'keybase2'}, 'innerQuorumSets': []}
 #     ]
 # }
-#
-#
-# def get_root_quorum_slice_definition(n_orgs):
-#     return {
-#         'threshold': n_orgs - 1,
-#         'validators': set(),
-#         'innerQuorumSets': [
-#             {'threshold': 2, 'validators': {org*3, org*3+1, org*3+2}, 'innerQuorumSets': []}
-#             for org in range(n_orgs)
-#         ]
-#     }
-#
-#
-#
+
+
+
+
 # def get_nodes(qs_definition):
 #     nodes = set(qs_definition['validators'])
 #     for inner_qs_definition in qs_definition['innerQuorumSets']:
 #         nodes = nodes.union(get_nodes(inner_qs_definition))
 #     return nodes
-#
-#
-# nodes = get_nodes(base_quorum_slice_definition)
 #
 #
 # def satisfies_definition(candidate, slice_definition):
@@ -104,76 +60,83 @@ plt.legend(loc='best', fontsize='large')
 #             satisfied += 1
 #     return satisfied >= slice_definition['threshold']
 #
-# for n_orgs in range(4, 7):
+#
+# for n_orgs in range(4, 10):
 #     base_quorum_slice_definition = get_root_quorum_slice_definition(n_orgs)
 #     nodes = get_nodes(base_quorum_slice_definition)
 #     quorum_slice_definition_by_node = {
-#         node: quorum.get_normalized_qset_definition({ 'publicKey': node, 'quorumSet': base_quorum_slice_definition })
+#         node: quorum.get_normalized_qset_definition({'publicKey': node, 'quorumSet': base_quorum_slice_definition})
 #         for node in nodes
 #     }
 #
 #     def is_slice_contained(candidate, node):
 #         return satisfies_definition(set(candidate), quorum_slice_definition_by_node[node])
 #
-#     quorums = quorums.enumerate_quorums(is_slice_contained, nodes)
 #
-# # counter = 0
-# # start2 = int(round(time.time() * 1000))
-# # for quorum_candidate in quorums.enumerate_quorums(nodes):
-# #     if len(quorum_candidate) > 0 and all([contains_slice(quorum_candidate, node) for node in quorum_candidate]):
-# #         counter += 1
-# #
-# #
-# # end2 = int(round(time.time() * 1000))
+# # start = time.time()
+#     start = int(round(time.time() * 1000))
+#     quorums = quorums.enumerate_quorums((is_slice_contained, nodes))
+#     finish = int(round(time.time() * 1000))
+#     t_time = finish-start
+#     print(f"Organizations: {n_orgs}\nQuorums found: {quorums}\nEllapsed time: {finish-start} milliseconds")
 #
-# counter=10
-# start2=8
-# end2=10
-# print(f"Iteration count: {counter}\nElapsed time: {end2-start2} milliseconds")
+#     start2 = int(round(time.time() * 1000))
+#     intersec = quorum_intersection.quorum_intersection((is_slice_contained, nodes))
+#     finish2 = int(round(time.time() * 1000))
+#     t_time2 = finish2-start2
+#     print(f"Organizations: {n_orgs}\nIntersection: {intersec}\nEllapsed time: {finish2-start2} milliseconds")
 #
-
-
-# x = range(-10, 11)
-# y = [x*x for x in x]
-# fig, (ax1, ax2) = plt.subplots(2, 1)
-# fig.suptitle('Threshold = n-1')
 #
-# ax1.set_title("Quorums Found")
-# ax1.set_xlabel("threshold")
-# ax1.set_ylabel("quorums")
-# ax1.set_yscale('log')
-# ax1.plot(n, numb_qs_n_1, color='red', lw=2)
-#
-# # ax2 = fig.add_subplot(2, 1, 2)
-# ax2.set_title("Ellapsed time")
-# ax2.set_xlabel("threshold")
-# ax2.set_ylabel("time")
-# ax2.set_yscale('log')
-# ax2.plot(n, timings_n_1, color='blue', lw=2)
 
 
 
 
-# fig2, axs = plt.subplots(2, sharex=True)
-# fig2.suptitle('Threshold = n-1')
-#
-# axs[0].set_title("Quorums Found")
-# axs[0].set_xlabel("threshold")
-# axs[0].set_ylabel("quorums")
-# axs[0].set_yscale('log')
-# axs[0].plot(n, numb_qs_n_1, color='red', lw=2)
-#
-# # ax2 = fig.add_subplot(2, 1, 2)
-# ax[1].set_title("Ellapsed time")
-# ax[1].set_xlabel("threshold")
-# ax[1].set_ylabel("time")
-# ax[1].set_yscale('log')
-# ax[1].plot(n, timings_n_1, color='blue', lw=2)
-#
-#
-# for ax in axs:
-#     ax.label_outer()
+n_orgs = [4, 5, 6, 7, 8, 9, 10]
+timings_n_1 = [38, 135, 625, 3617, 26081, 152506, 782316]
+numb_qs_n_1 = [1280, 6144, 28672, 131072, 589824, 2621440, 11534336]
+
+fig, ax1 = plt.subplots()
+
+ax1.set_yscale('log')
+ax1.plot(n_orgs, numb_qs_n_1, 'r--', lw=2, label='quorums')
+ax1.set_xlabel('Number of Organizations (n)')
+ax1.set_ylabel('Ellapsed time (ms)', color='r')
+ax1.tick_params(axis='y', labelcolor='r')
+
+ax2 = ax1.twinx()
+ax2.set_yscale('log')
+ax2.plot(n_orgs, timings_n_1, 'b:', lw=2, label='time')
+# ax2.set_xlabel('Number of Organizations (n)')
+ax2.set_ylabel('Quorums Found', color='b')
+ax2.tick_params(axis='y', labelcolor='b')
+
+# fig.tight_layout()  # otherwise right y-label is slightly clipped
+fig.legend(loc='upper left', fontsize='large')
+fig.suptitle('Threshold: n-1', fontsize=16)
 
 
 
+n_orgs2 = [4, 5, 6, 7, 8, 9]
+timings_n_2 = [48, 155, 894, 10351, 70939, 322751]
+numb_qs_n_2 = [1280, 6144, 28672,475136,2424832, 12058624]
+
+
+fig, ax1 = plt.subplots()
+
+ax1.set_yscale('log')
+ax1.plot(n_orgs2, numb_qs_n_2, 'r--', lw=2, label='quorums')
+ax1.set_xlabel('Number of Organizations (n)')
+ax1.set_ylabel('Ellapsed time (ms)', color='r')
+ax1.tick_params(axis='y', labelcolor='r')
+
+ax2 = ax1.twinx()
+ax2.set_yscale('log')
+ax2.plot(n_orgs2, timings_n_2, 'b:', lw=2, label='time')
+# ax2.set_xlabel('Number of Organizations (n)')
+ax2.set_ylabel('Quorums Found', color='b')
+ax2.tick_params(axis='y', labelcolor='b')
+
+# fig.tight_layout()  # otherwise right y-label is slightly clipped
+fig.legend(loc='upper left', fontsize='large')
+fig.suptitle('Threshold: floor(2/3 * n + 1)', fontsize=16)
 plt.show()
